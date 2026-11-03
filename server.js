@@ -48,37 +48,50 @@ async function ensureBgutil() {
   if (bgutilStarting) return bgutilStarting;
 
   bgutilStarting = (async () => {
-    try {
-      const response = await fetch("http://127.0.0.1:4416/ping", { signal: AbortSignal.timeout(1200) });
-      if (response.ok) return;
-    } catch {}
+    const pingUrl = "http://127.0.0.1:4416/ping";
+    const checkPing = async () => {
+      const response = await fetch(pingUrl, { signal: AbortSignal.timeout(2000) });
+      const body = await response.text();
+      console.log(`[BGUtil health] HTTP ${response.status}: ${body.slice(0, 300)}`);
+      return response.ok;
+    };
 
-    if (!bgutilProcess || bgutilProcess.exitCode !== null) {
-      bgutilProcess = spawn(NODE, [BGUTIL_ENTRY, "--host", "127.0.0.1", "--port", "4416"], {
+    try {
+      if (await checkPing()) return;
+    } catch (error) {
+      console.log("[BGUtil health] Initial check:", error.message);
+    }
+
+    if (!bgutilProcess || bgutilProcess.exitCode !== null || bgutilProcess.killed) {
+      const child = spawn(NODE, [BGUTIL_ENTRY, "--host", "127.0.0.1", "--port", "4416"], {
         cwd: BGUTIL_DIR,
         stdio: ["ignore", "pipe", "pipe"]
       });
-      bgutilProcess.stdout.on("data", chunk => console.log("[BGUtil]", chunk.toString().trim()));
-      bgutilProcess.stderr.on("data", chunk => console.error("[BGUtil]", chunk.toString().trim()));
-      bgutilProcess.on("error", error => {
-        console.error("BGUtil process failed to launch:", error);
-        bgutilProcess = null;
-      });
-      bgutilProcess.on("exit", code => {
+      bgutilProcess = child;
+      child.stdout.on("data", chunk => console.log("[BGUtil]", chunk.toString().trim()));
+      child.stderr.on("data", chunk => console.error("[BGUtil]", chunk.toString().trim()));
+      child.on("error", error => console.error("BGUtil process failed to launch:", error));
+      child.on("exit", code => {
         console.error("BGUtil provider exited:", code);
-        bgutilProcess = null;
+        if (bgutilProcess === child) bgutilProcess = null;
       });
     }
 
     for (let attempt = 0; attempt < 30; attempt++) {
-      if (bgutilProcess && bgutilProcess.exitCode !== null) throw new Error("BGUtil provider exited during startup.");
+      if (bgutilProcess && bgutilProcess.exitCode !== null) {
+        throw new Error("BGUtil provider exited during startup; check the [BGUtil] logs.");
+      }
       try {
-        const response = await fetch("http://127.0.0.1:4416/ping", { signal: AbortSignal.timeout(1000) });
-        if (response.ok) return;
-      } catch {}
+        if (await checkPing()) {
+          console.log("[BGUtil health] Provider is ready.");
+          return;
+        }
+      } catch (error) {
+        if (attempt === 29) console.error("[BGUtil health] Final check failed:", error.message);
+      }
       await new Promise(resolve => setTimeout(resolve, 500));
     }
-    throw new Error("BGUtil provider did not become ready on port 4416.");
+    throw new Error("BGUtil provider started but its /ping health check did not return HTTP 2xx. See [BGUtil health] logs.");
   })();
 
   try {
@@ -115,8 +128,7 @@ function runDownload(id, url, type, quality) {
   else args.push("--merge-output-format", "mp4");
 
   if (url.includes("youtube.com") || url.includes("youtu.be")) {
-    args.push("--extractor-args", "youtubepot-bgutilhttp:base_url=http://127.0.0.1:4416");
-    args.push("--extractor-args", "youtube:player-client=mweb,tv,web_safari");
+    args.push("--extractor-args", "youtubepot-bgutilhttp:base_url=http://127.0.0.1:4416;youtube:player-client=mweb,tv,web_safari");
     args.push("--verbose");
   }
 
