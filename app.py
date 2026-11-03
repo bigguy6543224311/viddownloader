@@ -2,6 +2,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 import re
 import threading
+import uuid
 
 from flask import Flask, render_template, request, jsonify, send_file
 import yt_dlp
@@ -35,7 +36,7 @@ def valid_url(value):
 
 
 def clean_filename(name):
-    name = re.sub(r'[<>:"/\\\\|?*\\x00-\\x1f]', "_", name)
+    name = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "_", name)
     return name[:150] or "video"
 
 
@@ -67,12 +68,22 @@ def run_download(job_id, url, media_type, quality):
         "outtmpl": str(DOWNLOAD_DIR / "%(title).150B-%(id)s.%(ext)s"),
         "noplaylist": True,
         "restrictfilenames": True,
-        "quiet": True,
-        "no_warnings": True,
+        "quiet": False,
+        "verbose": True,
+        "no_warnings": False,
         "progress_hooks": [hook],
         "overwrites": True,
         "format": format_map.get(quality, format_map["best"]),
         "merge_output_format": "mp4",
+
+        # BGUtil PO Token provider: script mode
+        "extractor_args": {
+            "youtubepot-bgutilscript": {
+                "server_home": [
+                    str(BASE_DIR / "bgutil-ytdlp-pot-provider" / "server")
+                ]
+            }
+        },
     }
 
     if media_type == "mp3":
@@ -87,6 +98,7 @@ def run_download(job_id, url, media_type, quality):
         with yt_dlp.YoutubeDL(options) as ydl:
             info = ydl.extract_info(url, download=True)
             filename = Path(ydl.prepare_filename(info))
+
             if media_type == "mp3":
                 filename = filename.with_suffix(".mp3")
             elif not filename.exists():
@@ -105,6 +117,7 @@ def run_download(job_id, url, media_type, quality):
                 "path": str(filename),
                 "progress": 100,
             })
+
     except Exception as exc:
         with jobs_lock:
             jobs[job_id].update({
@@ -126,18 +139,25 @@ def start_download():
     quality = data.get("quality", "best")
 
     if not valid_url(url):
-        return jsonify(error="Please enter a supported YouTube, Instagram, TikTok, Facebook or X URL."), 400
+        return jsonify(
+            error="Please enter a supported YouTube, Instagram, TikTok, Facebook or X URL."
+        ), 400
+
     if media_type not in ("mp4", "mp3"):
         return jsonify(error="Choose MP4 or MP3."), 400
+
     if quality not in ("best", "1080", "720", "480"):
         return jsonify(error="Choose a valid quality."), 400
 
-    import uuid
     job_id = uuid.uuid4().hex[:12]
+
     with jobs_lock:
         jobs[job_id] = {
-            "status": "queued", "message": "Starting...", "progress": 0,
-            "filename": None, "path": None
+            "status": "queued",
+            "message": "Starting...",
+            "progress": 0,
+            "filename": None,
+            "path": None
         }
 
     thread = threading.Thread(
@@ -146,6 +166,7 @@ def start_download():
         daemon=True
     )
     thread.start()
+
     return jsonify(job_id=job_id)
 
 
@@ -153,8 +174,10 @@ def start_download():
 def download_status(job_id):
     with jobs_lock:
         job = jobs.get(job_id)
+
         if not job:
             return jsonify(error="Download job not found."), 404
+
         return jsonify({k: v for k, v in job.items() if k != "path"})
 
 
@@ -162,10 +185,17 @@ def download_status(job_id):
 def get_file(job_id):
     with jobs_lock:
         job = jobs.get(job_id)
+
         if not job or job.get("status") != "done" or not job.get("path"):
             return jsonify(error="File is not ready."), 404
+
         path = job["path"]
-    return send_file(path, as_attachment=True, download_name=Path(path).name)
+
+    return send_file(
+        path,
+        as_attachment=True,
+        download_name=Path(path).name
+    )
 
 
 if __name__ == "__main__":
