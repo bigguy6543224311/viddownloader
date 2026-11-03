@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Soni Downloader</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand-mark">↓</div>
+      <div class="brand">SONI <span>DOWNLOADER</span></div>
+      <div class="local-tag"><i></i> LOCAL MODE</div>
+    </header>
+
+    <section class="hero">
+      <div class="eyebrow">YOUR PERSONAL MEDIA TOOL</div>
+      <h1>Save the videos<br><span>you have permission to keep.</span></h1>
+      <p>Paste a supported link, choose a format, and save it to your PC.</p>
+
+      <div class="panel">
+        <label for="url">VIDEO LINK</label>
+        <div class="url-wrap">
+          <input id="url" type="url" placeholder="Paste a YouTube, Instagram, TikTok link..." autocomplete="off">
+          <button id="pasteBtn" class="paste" type="button">PASTE</button>
+        </div>
+
+        <div class="options">
+          <div class="field">
+            <label for="type">FORMAT</label>
+            <select id="type">
+              <option value="mp4">MP4 · Video</option>
+              <option value="mp3">MP3 · Audio</option>
+            </select>
+          </div>
+          <div class="field" id="qualityField">
+            <label for="quality">QUALITY</label>
+            <select id="quality">
+              <option value="best">Best available</option>
+              <option value="1080">Up to 1080p</option>
+              <option value="720">Up to 720p</option>
+              <option value="480">Up to 480p</option>
+            </select>
+          </div>
+        </div>
+
+        <button id="downloadBtn" class="download-btn" type="button">
+          <span>↓</span> START DOWNLOAD
+        </button>
+
+        <div id="status" class="status" aria-live="polite">Ready when you are.</div>
+        <div class="progress-track"><div id="progress" class="progress"></div></div>
+        <a id="saveLink" class="save-link" hidden>Download finished file ↓</a>
+      </div>
+
+      <div class="platforms">
+        <span>SUPPORTED SOURCES</span>
+        <b>YouTube</b><b>Instagram</b><b>TikTok</b><b>Facebook</b><b>X</b>
+      </div>
+    </section>
+
+    <footer>
+      <span>Runs on your PC · No account required</span>
+      <span>Use only for content you own or are authorized to download.</span>
+    </footer>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>
