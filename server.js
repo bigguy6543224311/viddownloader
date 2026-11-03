@@ -3,6 +3,7 @@ const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
 const crypto = require("crypto");
+const os = require("os");
 
 const app = express();
 const ROOT = __dirname;
@@ -109,6 +110,30 @@ async function ensureBgutil() {
   }
 }
 
+function getYouTubeCookiesFile() {
+  const raw = process.env.YOUTUBE_COOKIES || "";
+  const encoded = process.env.YOUTUBE_COOKIES_B64 || "";
+  if (!raw && !encoded) return null;
+
+  let cookieText = raw;
+  if (encoded) {
+    try {
+      cookieText = Buffer.from(encoded, "base64").toString("utf8");
+    } catch {
+      throw new Error("YOUTUBE_COOKIES_B64 is not valid base64.");
+    }
+  }
+
+  if (!cookieText.includes("youtube.com") || !cookieText.includes("# Netscape HTTP Cookie File") && !cookieText.includes("# HTTP Cookie File")) {
+    throw new Error("YouTube cookies must be in Netscape cookie-file format. Re-export your cookies and update the Render secret.");
+  }
+
+  const cookiePath = path.join(os.tmpdir(), "soni-youtube-cookies.txt");
+  fs.writeFileSync(cookiePath, cookieText, { encoding: "utf8", mode: 0o600 });
+  try { fs.chmodSync(cookiePath, 0o600); } catch {}
+  return cookiePath;
+}
+
 function runDownload(id, url, type, quality) {
   updateJob(id, { status: "downloading", message: "Connecting to the source..." });
 
@@ -138,6 +163,18 @@ function runDownload(id, url, type, quality) {
 
   if (url.includes("youtube.com") || url.includes("youtu.be")) {
     args.push("--extractor-args", "youtubepot-bgutilhttp:base_url=http://127.0.0.1:4416;youtube:player-client=mweb,tv,web_safari");
+    try {
+      const cookiesFile = getYouTubeCookiesFile();
+      if (cookiesFile) {
+        args.push("--cookies", cookiesFile);
+        console.log("[yt-dlp] Using YouTube cookies from the Render environment secret.");
+      } else {
+        console.log("[yt-dlp] No YouTube cookies configured; continuing without account cookies.");
+      }
+    } catch (error) {
+      updateJob(id, { status: "error", message: error.message.slice(0, 500) });
+      return;
+    }
     args.push("--verbose");
   }
 
