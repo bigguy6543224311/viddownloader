@@ -206,4 +206,33 @@ app.get("/api/file/:id", (req, res) => {
   res.download(job.path, job.filename);
 });
 
+
+async function diagnoseOutboundIp() {
+  try {
+    const response = await fetch("https://api.ipapi.is/", {
+      signal: AbortSignal.timeout(8000),
+      headers: { "Accept": "application/json", "User-Agent": "SONI-DOWNLOADER/1.0" }
+    });
+    if (!response.ok) throw new Error(`IP diagnostic returned HTTP ${response.status}`);
+    const info = await response.json();
+    const company = info.company || {};
+    const asn = info.asn || {};
+    console.log("[IP diagnostic] Render outbound network:", JSON.stringify({
+      ip: info.ip || null,
+      asn: asn.asn || company.asn || null,
+      organization: company.name || asn.org || null,
+      is_datacenter: info.is_datacenter ?? null,
+      is_proxy: info.is_proxy ?? null,
+      is_vpn: info.is_vpn ?? null,
+      is_tor: info.is_tor ?? null,
+      is_abuser: info.is_abuser ?? null
+    }));
+    console.log("[IP diagnostic] These reputation signals do not confirm whether YouTube blocks this IP.");
+  } catch (error) {
+    console.warn("[IP diagnostic] Could not inspect outbound IP:", error.message);
+  }
+}
+
 app.listen(PORT, "0.0.0.0", () => console.log(`SONI DOWNLOADER (Node.js) listening on ${PORT}`));
+
+diagnoseOutboundIp();
