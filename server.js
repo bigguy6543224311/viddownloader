@@ -77,7 +77,8 @@ async function ensureBgutil() {
       });
     }
 
-    for (let attempt = 0; attempt < 30; attempt++) {
+    let lastPingError = null;
+    for (let attempt = 0; attempt < 60; attempt++) {
       if (bgutilProcess && bgutilProcess.exitCode !== null) {
         throw new Error("BGUtil provider exited during startup; check the [BGUtil] logs.");
       }
@@ -86,12 +87,19 @@ async function ensureBgutil() {
           console.log("[BGUtil health] Provider is ready.");
           return;
         }
+        lastPingError = new Error("Health endpoint returned a non-2xx status.");
       } catch (error) {
-        if (attempt === 29) console.error("[BGUtil health] Final check failed:", error.message);
+        lastPingError = error;
+        const cause = error.cause;
+        if (attempt === 0 || attempt % 10 === 9 || attempt === 59) {
+          console.error("[BGUtil health] Connection attempt", attempt + 1, "failed:", error.message,
+            cause ? { code: cause.code, message: cause.message, address: cause.address, port: cause.port } : "");
+        }
       }
       await new Promise(resolve => setTimeout(resolve, 500));
     }
-    throw new Error("BGUtil provider started but its /ping health check did not return HTTP 2xx. See [BGUtil health] logs.");
+    console.error("[BGUtil health] Final connection error:", lastPingError?.cause || lastPingError);
+    throw new Error("BGUtil provider did not become reachable at 127.0.0.1:4416 within 30 seconds. See [BGUtil health] logs.");
   })();
 
   try {
