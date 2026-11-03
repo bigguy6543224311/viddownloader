@@ -156,6 +156,7 @@ function runDownload(id, url, type, quality) {
     "--remote-components", "ejs:github",
     "--format", type === "mp3" ? "bestaudio/best" : formats[quality],
     "--output", path.join(DOWNLOAD_DIR, "%(title).150B-%(id)s.%(ext)s"),
+    "--print", "before_dl:%(title)s",
     "--print", "after_move:filepath"
   ];
 
@@ -184,6 +185,7 @@ function runDownload(id, url, type, quality) {
   let output = "";
   let errorOutput = "";
   let finalPath = "";
+  let videoTitle = "";
 
   const child = spawn(PYTHON, args, { cwd: ROOT, env: process.env });
   child.stdout.on("data", chunk => {
@@ -193,6 +195,7 @@ function runDownload(id, url, type, quality) {
       const match = line.match(/\[download\]\s+(\d+(?:\.\d+)?)%/);
       if (match) updateJob(id, { progress: Math.min(99, Math.round(Number(match[1]))), message: "Downloading..." });
       if (line.trim() && fs.existsSync(line.trim())) finalPath = line.trim();
+      else if (line.trim() && !videoTitle) { videoTitle = line.trim(); updateJob(id, { title: videoTitle }); }
     }
   });
   child.stderr.on("data", chunk => {
@@ -239,7 +242,7 @@ app.post("/api/download", async (req, res) => {
   if (!["best", "1080", "720", "480"].includes(quality)) return res.status(400).json({ error: "Choose a valid quality." });
 
   const id = crypto.randomBytes(6).toString("hex");
-  jobs.set(id, { status: "queued", message: "Starting...", progress: 0, filename: null, path: null });
+  jobs.set(id, { status: "queued", message: "Starting...", progress: 0, filename: null, title: null, path: null });
 
   res.json({ job_id: id });
   try {
