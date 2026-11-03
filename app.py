@@ -25,6 +25,55 @@ ALLOWED_HOSTS = {
 jobs = {}
 jobs_lock = threading.Lock()
 
+# Keep one BGUtil HTTP provider alive instead of spawning a slow Node script
+# for every YouTube token request.
+bgutil_process = None
+bgutil_lock = threading.Lock()
+
+
+def ensure_bgutil_http_provider():
+    global bgutil_process
+
+    server_dir = BASE_DIR / "bgutil-ytdlp-pot-provider" / "server"
+    node_path = BASE_DIR / ".node" / "node-v22.23.4-linux-x64" / "bin" / "node"
+    entrypoint = server_dir / "build" / "main.js"
+
+    if not entrypoint.exists() or not node_path.exists():
+        raise RuntimeError("The BGUtil HTTP provider or Node.js runtime is missing.")
+
+    with bgutil_lock:
+        # Reuse an already-running provider if possible.
+        try:
+            from urllib.request import urlopen
+            with urlopen("http://127.0.0.1:4416/ping", timeout=2):
+                return
+        except Exception:
+            pass
+
+        if bgutil_process is None or bgutil_process.poll() is not None:
+            import subprocess
+            bgutil_process = subprocess.Popen(
+                [str(node_path), str(entrypoint)],
+                cwd=str(server_dir),
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+
+        # Give the local provider a few seconds to bind its port.
+        import time
+        for _ in range(20):
+            if bgutil_process.poll() is not None:
+                raise RuntimeError("The BGUtil HTTP provider stopped during startup.")
+            try:
+                from urllib.request import urlopen
+                with urlopen("http://127.0.0.1:4416/ping", timeout=1):
+                    return
+            except Exception:
+                time.sleep(0.5)
+
+        raise RuntimeError("The BGUtil HTTP provider did not start on port 4416.")
+
 
 def valid_url(value):
     try:
@@ -76,21 +125,10 @@ def run_download(job_id, url, media_type, quality):
         "format": format_map.get(quality, format_map["best"]),
         "merge_output_format": "mp4",
 
-        # Make the Node.js runtime installed during the Render build available to yt-dlp.
-        "js_runtimes": {
-            "node": {
-                "path": str(
-                    BASE_DIR / ".node" / "node-v22.23.4-linux-x64" / "bin" / "node"
-                )
-            }
-        },
-
-        # BGUtil PO Token provider: script mode
+        # BGUtil HTTP provider is started once and reused for PO token requests.
         "extractor_args": {
-            "youtubepot-bgutilscript": {
-                "server_home": [
-                    str(BASE_DIR / "bgutil-ytdlp-pot-provider" / "server")
-                ]
+            "youtubepot-bgutilhttp": {
+                "base_url": ["http://127.0.0.1:4416"]
             }
         },
     }
@@ -104,6 +142,7 @@ def run_download(job_id, url, media_type, quality):
         }]
 
     try:
+        ensure_bgutil_http_provider()
         with yt_dlp.YoutubeDL(options) as ydl:
             info = ydl.extract_info(url, download=True)
             filename = Path(ydl.prepare_filename(info))
