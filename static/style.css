@@ -27,20 +27,8 @@ input:focus,select:focus{border-color:var(--blue)}
 .status{text-align:center;color:#9ba7c2;font-size:12px;margin:17px 0 10px;min-height:18px}
 .progress-track{height:5px;background:#252d40;border-radius:10px;overflow:hidden}
 .progress{height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--cyan));transition:width .25s}
-.save-link{display:block;text-align:center;color:var(--cyan);font-weight:700;text-decoration:none;margin-top:16px}
+.save-link{display:block;text-align:center;background:linear-gradient(100deg,#6388ff,#8c68f7);color:white;font-weight:700;letter-spacing:1.2px;text-decoration:none;margin-top:16px;padding:16px;border-radius:12px;box-shadow:0 9px 28px #657dff35}
 .platforms{display:flex;justify-content:center;align-items:center;gap:17px;flex-wrap:wrap;margin:30px 0;color:#c3cce0;font-size:12px}
 .platforms span{font-size:9px;letter-spacing:1.5px;color:#707b94}
 footer{display:flex;justify-content:space-between;gap:14px;color:#68738b;font-size:10px;margin-top:90px;border-top:1px solid #20283a;padding-top:17px}
 @media(max-width:600px){.shell{padding:18px}.hero{margin-top:65px}.panel{padding:18px}.options{grid-template-columns:1fr}.platforms{gap:10px}footer{flex-direction:column;margin-top:55px}.local-tag{font-size:9px}}
-
-.modal[hidden]{display:none}
-.modal{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:20px}
-.modal-backdrop{position:absolute;inset:0;background:#03050bdc;backdrop-filter:blur(7px)}
-.modal-card{position:relative;width:min(100%,460px);padding:38px 30px 30px;text-align:center;border:1px solid #35415d;border-radius:24px;background:linear-gradient(145deg,#192238,#101522);box-shadow:0 28px 100px #000b;animation:modalIn .22s ease-out}
-.modal-close{position:absolute;right:16px;top:12px;border:0;background:transparent;color:#aeb9d1;font-size:28px;cursor:pointer}
-.modal-icon{width:58px;height:58px;margin:0 auto 18px;border-radius:50%;display:grid;place-items:center;background:#173b39;color:#54e0d0;font-size:30px;font-weight:700}
-.modal-eyebrow{color:var(--cyan);font-size:10px;font-weight:700;letter-spacing:2px}
-.modal-card h2{font:700 27px 'Space Grotesk';margin:12px 0}
-.modal-caption{color:#aeb9d1;font-size:14px;line-height:1.55;overflow-wrap:anywhere;margin:0 0 25px}
-.modal-download{display:block;padding:19px 16px;border-radius:13px;background:linear-gradient(100deg,#6388ff,#8c68f7);color:white;text-decoration:none;font-size:14px;font-weight:700;letter-spacing:1.2px;box-shadow:0 10px 30px #657dff45}
-@keyframes modalIn{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
