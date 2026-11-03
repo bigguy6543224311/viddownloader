@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: soni-downloader
+    runtime: docker
+    plan: free
+    healthCheckPath: /
