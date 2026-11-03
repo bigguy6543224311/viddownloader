@@ -76,6 +76,15 @@ def run_download(job_id, url, media_type, quality):
         "format": format_map.get(quality, format_map["best"]),
         "merge_output_format": "mp4",
 
+        # Make the Node.js runtime installed during the Render build available to yt-dlp.
+        "js_runtimes": {
+            "node": {
+                "path": str(
+                    BASE_DIR / ".node" / "node-v22.23.4-linux-x64" / "bin" / "node"
+                )
+            }
+        },
+
         # BGUtil PO Token provider: script mode
         "extractor_args": {
             "youtubepot-bgutilscript": {
