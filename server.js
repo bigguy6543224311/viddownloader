@@ -153,6 +153,7 @@ function runDownload(id, url, type, quality) {
     "--no-warnings",
     "--progress-delta", "1",
     "--js-runtimes", "node",
+    "--remote-components", "ejs:github",
     "--format", type === "mp3" ? "bestaudio/best" : formats[quality],
     "--output", path.join(DOWNLOAD_DIR, "%(title).150B-%(id)s.%(ext)s"),
     "--print", "after_move:filepath"
