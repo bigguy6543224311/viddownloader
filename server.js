@@ -54,11 +54,16 @@ async function ensureBgutil() {
     } catch {}
 
     if (!bgutilProcess || bgutilProcess.exitCode !== null) {
-      bgutilProcess = spawn(NODE, [BGUTIL_ENTRY], {
+      bgutilProcess = spawn(NODE, [BGUTIL_ENTRY, "--host", "127.0.0.1", "--port", "4416"], {
         cwd: BGUTIL_DIR,
-        stdio: ["ignore", "ignore", "pipe"]
+        stdio: ["ignore", "pipe", "pipe"]
       });
+      bgutilProcess.stdout.on("data", chunk => console.log("[BGUtil]", chunk.toString().trim()));
       bgutilProcess.stderr.on("data", chunk => console.error("[BGUtil]", chunk.toString().trim()));
+      bgutilProcess.on("error", error => {
+        console.error("BGUtil process failed to launch:", error);
+        bgutilProcess = null;
+      });
       bgutilProcess.on("exit", code => {
         console.error("BGUtil provider exited:", code);
         bgutilProcess = null;
