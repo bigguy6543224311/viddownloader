@@ -6,6 +6,16 @@ const downloadBtn = document.getElementById("downloadBtn");
 const statusEl = document.getElementById("status");
 const progressEl = document.getElementById("progress");
 const saveLink = document.getElementById("saveLink");
+const downloadModal = document.getElementById("downloadModal");
+const modalTitle = document.getElementById("modalTitle");
+const modalCaption = document.getElementById("modalCaption");
+const modalDownload = document.getElementById("modalDownload");
+
+function closeDownloadModal() {
+  downloadModal.hidden = true;
+}
+document.getElementById("closeModal").addEventListener("click", closeDownloadModal);
+downloadModal.querySelector("[data-close-modal]").addEventListener("click", closeDownloadModal);
 
 typeSelect.addEventListener("change", () => {
   qualityField.style.opacity = typeSelect.value === "mp3" ? ".4" : "1";
