@@ -116,6 +116,8 @@ function runDownload(id, url, type, quality) {
 
   if (url.includes("youtube.com") || url.includes("youtu.be")) {
     args.push("--extractor-args", "youtubepot-bgutilhttp:base_url=http://127.0.0.1:4416");
+    args.push("--extractor-args", "youtube:player-client=mweb,tv,web_safari");
+    args.push("--verbose");
   }
 
   args.push(url);
