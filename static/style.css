@@ -103,3 +103,13 @@ footer{display:flex;justify-content:space-between;gap:14px;color:#71798a;font-si
   .platforms{gap:12px;margin-top:26px}.platforms span{width:100%;text-align:center}
   footer{flex-direction:column;margin-top:55px;line-height:1.6}
 }
+
+.copy-title-btn{
+  display:block;width:100%;margin-top:10px;padding:15px 16px;
+  border:1px solid rgba(182,243,106,.35);border-radius:13px;
+  background:rgba(182,243,106,.07);color:var(--accent-2);
+  font-weight:800;font-size:11px;letter-spacing:1.1px;cursor:pointer;
+  transition:background .18s,border-color .18s,transform .18s
+}
+.copy-title-btn:hover{background:rgba(182,243,106,.13);border-color:var(--accent);transform:translateY(-1px)}
+.copy-title-btn:active{transform:translateY(0)}
