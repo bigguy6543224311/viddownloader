@@ -262,7 +262,7 @@ app.post("/api/cookies", (req, res) => {
   }
 });
 
-app.get("/", (_req, res) => res.sendFile(path.join(ROOT, "templates", "index.html")));
+app.get("/", (_req, res) => res.sendFile(path.join(ROOT, "templates", "index.html")));\napp.get("/sw.js", (_req, res) => {\n  res.set("Service-Worker-Allowed", "/");\n  res.sendFile(path.join(ROOT, "static", "sw.js"));\n});
 
 app.post("/api/download", async (req, res) => {
   const url = String(req.body?.url || "").trim();
