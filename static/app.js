@@ -31,7 +31,6 @@ function formatEta(value) {
   return seconds < 60 ? `${seconds}s left` : `${Math.floor(seconds / 60)}m ${seconds % 60}s left`;
 }
 function updateTransfer(job) {
-  transferPanel.hidden = false;
   transferEmpty.hidden = true;
   transferDetails.hidden = false;
   transferName.textContent = job.title || job.filename || "Preparing your file…";
@@ -138,10 +137,93 @@ copyTitleBtn.addEventListener("click", async () => {
   setTimeout(() => { copyTitleBtn.textContent = "▢ COPY CAPTION"; }, 1800);
 });
 
-saveLink.addEventListener("click", () => {
-  saveLink.hidden = true;
-  downloadBtn.hidden = false;
-  downloadBtn.disabled = false;
+saveLink.addEventListener("click", event => {
+  event.preventDefault();
+  const fileUrl = saveLink.href;
+  const startedAt = Date.now();
+  let lastLoaded = 0;
+  let lastTime = startedAt;
+  let currentSpeed = 0;
+
+  transferPanel.hidden = false;
+  transferEmpty.hidden = true;
+  transferDetails.hidden = false;
+  transferName.textContent = completedVideoTitle || "Your download";
+  transferState.textContent = "Saving to your device…";
+  transferPercent.textContent = "0%";
+  transferBar.style.width = "0%";
+  transferBar.classList.remove("transfer-error");
+  transferSpeed.textContent = "Starting…";
+  transferEta.textContent = "";
+
+  saveLink.textContent = "PREPARING…";
+  saveLink.style.pointerEvents = "none";
+
+  const xhr = new XMLHttpRequest();
+  xhr.open("GET", fileUrl);
+  xhr.responseType = "blob";
+
+  xhr.onprogress = progress => {
+    const now = Date.now();
+    const elapsed = (now - lastTime) / 1000;
+    if (elapsed > 0) currentSpeed = (progress.loaded - lastLoaded) / elapsed;
+    lastLoaded = progress.loaded;
+    lastTime = now;
+
+    const total = progress.lengthComputable ? progress.total : 0;
+    const pct = total ? Math.min(100, Math.round(progress.loaded * 100 / total)) : 0;
+    transferPercent.textContent = total ? pct + "%" : formatBytes(progress.loaded) + " received";
+    transferBar.style.width = pct + "%";
+    transferSpeed.textContent = formatBytes(currentSpeed);
+    transferEta.textContent = total && currentSpeed > 0
+      ? formatEta((total - progress.loaded) / currentSpeed)
+      : "";
+  };
+
+  xhr.onload = () => {
+    if (xhr.status < 200 || xhr.status >= 300) {
+      transferState.textContent = "Download failed";
+      transferEmpty.hidden = false;
+      transferEmpty.textContent = "Couldn't download the file to your device.";
+      transferDetails.hidden = true;
+      saveLink.textContent = "↓ DOWNLOAD";
+      saveLink.style.pointerEvents = "";
+      return;
+    }
+
+    const disposition = xhr.getResponseHeader("Content-Disposition") || "";
+    const match = disposition.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i);
+    const filename = match
+      ? decodeURIComponent(match[1] || match[2])
+      : "video-download";
+    const objectUrl = URL.createObjectURL(xhr.response);
+    const anchor = document.createElement("a");
+    anchor.href = objectUrl;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+
+    transferState.textContent = "Complete — saved to your device";
+    transferPercent.textContent = "100%";
+    transferBar.style.width = "100%";
+    transferSpeed.textContent = "Complete";
+    transferEta.textContent = "";
+    saveLink.textContent = "↓ DOWNLOAD AGAIN";
+    saveLink.style.pointerEvents = "";
+  };
+
+  xhr.onerror = () => {
+    transferState.textContent = "Download failed";
+    transferEmpty.hidden = false;
+    transferEmpty.textContent = "Network error while saving the file.";
+    transferDetails.hidden = true;
+    saveLink.textContent = "↓ DOWNLOAD";
+    saveLink.style.pointerEvents = "";
+  };
+
+  xhr.send();
 });
 
 downloadBtn.addEventListener("click", async () => {
@@ -155,10 +237,6 @@ downloadBtn.addEventListener("click", async () => {
   copyTitleBtn.textContent = "▢ COPY CAPTION";
   progressEl.style.width = "0%";
   statusEl.textContent = "Starting download...";
-  transferPanel.hidden = false;
-  transferEmpty.hidden = false;
-  transferDetails.hidden = true;
-  transferEmpty.textContent = "Connecting to the source…";
 
   try {
     const response = await fetch("/api/download", {
