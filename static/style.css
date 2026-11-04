@@ -32,3 +32,6 @@ input:focus,select:focus{border-color:var(--blue)}
 .platforms span{font-size:9px;letter-spacing:1.5px;color:#707b94}
 footer{display:flex;justify-content:space-between;gap:14px;color:#68738b;font-size:10px;margin-top:90px;border-top:1px solid #20283a;padding-top:17px}
 @media(max-width:600px){.shell{padding:18px}.hero{margin-top:65px}.panel{padding:18px}.options{grid-template-columns:1fr}.platforms{gap:10px}footer{flex-direction:column;margin-top:55px}.local-tag{font-size:9px}}
+
+/* Ensure hidden controls stay hidden despite component display styles. */
+[hidden]{display:none!important}
