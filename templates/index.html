@@ -64,6 +64,16 @@
         <b>YouTube</b><b>Instagram</b><b>TikTok</b><b>Facebook</b><b>X</b>
       </div>
     </section>
+    <aside id="transferPanel" class="transfer-panel" aria-live="polite" aria-label="Download manager" hidden>
+      <div class="transfer-head"><span class="transfer-dot"></span><strong>DOWNLOAD MANAGER</strong><button id="transferClose" type="button" aria-label="Hide download manager">−</button></div>
+      <div id="transferEmpty" class="transfer-empty">Your transfers will appear here.</div>
+      <div id="transferDetails" hidden>
+        <div id="transferName" class="transfer-name">Preparing download…</div>
+        <div class="transfer-meta"><span id="transferState">Connecting</span><span id="transferPercent">0%</span></div>
+        <div class="transfer-track"><div id="transferBar" class="transfer-bar"></div></div>
+        <div class="transfer-stats"><span id="transferSpeed">—</span><span id="transferEta"></span></div>
+      </div>
+    </aside>
     <footer>
       <span>Cloud-powered · No account required</span>
       <span>Use only for content you own or are authorized to download.</span>
