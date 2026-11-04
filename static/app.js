@@ -17,6 +17,68 @@ document.getElementById("pasteBtn").addEventListener("click", async () => {
   catch { statusEl.textContent = "Clipboard access blocked — paste with Ctrl+V."; }
 });
 
+// PWA install button: use the native browser prompt when available, with
+// clear manual-install instructions for Safari and unsupported browsers.
+const installAppBtn = document.getElementById("installAppBtn");
+const installHelp = document.getElementById("installHelp");
+let deferredInstallPrompt = null;
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isStandalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+
+function showInstallHelp(message) {
+  installHelp.textContent = message;
+  installHelp.hidden = false;
+}
+
+if (isStandalone) {
+  installAppBtn.textContent = "✓ SONI APP INSTALLED";
+  installAppBtn.disabled = true;
+}
+
+window.addEventListener("beforeinstallprompt", event => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+});
+
+window.addEventListener("appinstalled", () => {
+  deferredInstallPrompt = null;
+  installAppBtn.textContent = "✓ SONI APP INSTALLED";
+  installAppBtn.disabled = true;
+  installHelp.hidden = true;
+});
+
+installAppBtn.addEventListener("click", async () => {
+  if (isStandalone) return;
+
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    const choice = await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    if (choice?.outcome === "accepted") {
+      installAppBtn.textContent = "✓ SONI APP INSTALLED";
+      installAppBtn.disabled = true;
+      installHelp.hidden = true;
+    } else {
+      showInstallHelp("No worries — you can install SONI later from your browser's install option.");
+    }
+    return;
+  }
+
+  if (isIOS) {
+    showInstallHelp('On iPhone/iPad: tap the Share button in Safari, then choose “Add to Home Screen”.');
+  } else {
+    showInstallHelp('In Chrome or Edge: open the browser menu (⋮), then choose “Install SONI Downloader” or “Install page as app”.');
+  }
+});
+
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(error => {
+      console.warn("[SONI PWA] Service worker registration failed:", error);
+    });
+  });
+}
+
 // The final download button returns the interface to its ready state.
 saveLink.addEventListener("click", () => {
   saveLink.hidden = true;
@@ -53,7 +115,6 @@ downloadBtn.addEventListener("click", async () => {
         }
 
         if (job.status === "done") {
-          // Only reveal the final download action once processing is fully complete.
           progressEl.style.width = "100%";
           saveLink.href = `/api/file/${jobId}`;
           saveLink.textContent = "↓ DOWNLOAD";
