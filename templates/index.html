@@ -10,9 +10,9 @@
   <meta name="description" content="SONI Downloader — save videos you are authorized to keep.">
   <link rel="manifest" href="/static/manifest.webmanifest">
   <link rel="icon" href="/static/soni-icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="/static/soni-icon.svg">
-  <title>Soni Downloader</title>
-  <link rel="stylesheet" href="/static/style.css?v=pwa1">
+  <link rel="apple-touch-icon" href="/static/soni-icon-192.png">
+  <title>SONI Downloader</title>
+  <link rel="stylesheet" href="/static/style.css?v=pwa2">
 </head>
 <body>
   <main class="shell">
@@ -21,19 +21,16 @@
       <div class="brand">SONI <span>DOWNLOADER</span></div>
       <div class="local-tag"><i></i> LOCAL MODE</div>
     </header>
-
     <section class="hero">
       <div class="eyebrow">YOUR PERSONAL MEDIA TOOL</div>
       <h1>Save the videos<br><span>you have permission to keep.</span></h1>
       <p>Paste a supported link, choose a format, and save it to your PC.</p>
-
       <div class="panel">
         <label for="url">VIDEO LINK</label>
         <div class="url-wrap">
           <input id="url" type="url" placeholder="Paste a YouTube, Instagram, TikTok link..." autocomplete="off">
           <button id="pasteBtn" class="paste" type="button">PASTE</button>
         </div>
-
         <div class="options">
           <div class="field">
             <label for="type">FORMAT</label>
@@ -52,32 +49,25 @@
             </select>
           </div>
         </div>
-
-        <button id="downloadBtn" class="download-btn" type="button">
-          <span>↓</span> START DOWNLOAD
-        </button>
-
+        <button id="downloadBtn" class="download-btn" type="button"><span>↓</span> START DOWNLOAD</button>
         <div id="status" class="status" aria-live="polite">Ready when you are.</div>
         <div class="progress-track"><div id="progress" class="progress"></div></div>
         <a id="saveLink" class="save-link" hidden>↓ DOWNLOAD</a>
       </div>
-
       <div class="install-area">
-        <button id="installAppBtn" class="install-app-btn" type="button">↓ DOWNLOAD SONI APP</button>
+        <button id="installAppBtn" class="install-app-btn" type="button">↓ INSTALL SONI APP</button>
         <p id="installHelp" class="install-help" hidden aria-live="polite"></p>
       </div>
-
       <div class="platforms">
         <span>SUPPORTED SOURCES</span>
         <b>YouTube</b><b>Instagram</b><b>TikTok</b><b>Facebook</b><b>X</b>
       </div>
     </section>
-
     <footer>
       <span>Runs on your device · No account required</span>
       <span>Use only for content you own or are authorized to download.</span>
     </footer>
   </main>
-  <script src="/static/app.js?v=pwa1"></script>
+  <script src="/static/app.js?v=pwa2"></script>
 </body>
 </html>
