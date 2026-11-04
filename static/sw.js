@@ -1,9 +1,11 @@
-const CACHE_NAME = "soni-shell-v1";
+const CACHE_NAME = "soni-shell-v2";
 const APP_SHELL = [
   "/",
-  "/static/style.css?v=pwa1",
-  "/static/app.js?v=pwa1",
+  "/static/style.css?v=pwa2",
+  "/static/app.js?v=pwa2",
   "/static/manifest.webmanifest",
+  "/static/soni-icon-192.png",
+  "/static/soni-icon-512.png",
   "/static/soni-icon.svg"
 ];
 
