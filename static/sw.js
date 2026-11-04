@@ -1,4 +1,4 @@
-const CACHE_NAME = "soni-shell-v2";
+const CACHE_NAME = "video-downloader-v3";
 const APP_SHELL = [
   "/",
   "/static/style.css?v=pwa2",
