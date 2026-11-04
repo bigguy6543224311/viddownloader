@@ -68,7 +68,7 @@ function showInstallHelp(message) {
 }
 
 if (isStandalone) {
-  installAppBtn.textContent = "✓ SONI APP INSTALLED";
+  installAppBtn.textContent = "✓ VIDEO DOWNLOADER INSTALLED";
   installAppBtn.disabled = true;
 }
 
@@ -79,7 +79,7 @@ window.addEventListener("beforeinstallprompt", event => {
 
 window.addEventListener("appinstalled", () => {
   deferredInstallPrompt = null;
-  installAppBtn.textContent = "✓ SONI APP INSTALLED";
+  installAppBtn.textContent = "✓ VIDEO DOWNLOADER INSTALLED";
   installAppBtn.disabled = true;
   installHelp.hidden = true;
 });
@@ -92,11 +92,11 @@ installAppBtn.addEventListener("click", async () => {
     const choice = await deferredInstallPrompt.userChoice;
     deferredInstallPrompt = null;
     if (choice?.outcome === "accepted") {
-      installAppBtn.textContent = "✓ SONI APP INSTALLED";
+      installAppBtn.textContent = "✓ VIDEO DOWNLOADER INSTALLED";
       installAppBtn.disabled = true;
       installHelp.hidden = true;
     } else {
-      showInstallHelp("No worries — you can install SONI later from your browser's install option.");
+      showInstallHelp("No worries — you can install Video Downloader later from your browser's install option.");
     }
     return;
   }
@@ -104,14 +104,14 @@ installAppBtn.addEventListener("click", async () => {
   if (isIOS) {
     showInstallHelp('On iPhone/iPad: tap the Share button in Safari, then choose “Add to Home Screen”.');
   } else {
-    showInstallHelp('In Chrome or Edge: open the browser menu (⋮), then choose “Install SONI Downloader” or “Install page as app”.');
+    showInstallHelp('In Chrome or Edge: open the browser menu (⋮), then choose “Install Video Downloader” or “Install page as app”.');
   }
 });
 
 if ("serviceWorker" in navigator && location.protocol === "https:") {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("/sw.js").catch(error => {
-      console.warn("[SONI PWA] Service worker registration failed:", error);
+      console.warn("[Video Downloader PWA] Service worker registration failed:", error);
     });
   });
 }
