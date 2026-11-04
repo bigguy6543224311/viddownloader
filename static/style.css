@@ -28,10 +28,13 @@ input:focus,select:focus{border-color:var(--blue)}
 .progress-track{height:5px;background:#252d40;border-radius:10px;overflow:hidden}
 .progress{height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--cyan));transition:width .25s}
 .save-link{display:block;text-align:center;background:linear-gradient(100deg,#6388ff,#8c68f7);color:white;font-weight:700;letter-spacing:1.2px;text-decoration:none;margin-top:16px;padding:16px;border-radius:12px;box-shadow:0 9px 28px #657dff35}
+.install-area{max-width:440px;margin:22px auto 0}
+.install-app-btn{width:100%;padding:14px 18px;border:1px solid #3b4968;border-radius:12px;background:#151d30;color:#dce6ff;font-weight:700;font-size:11px;letter-spacing:1.3px;cursor:pointer;transition:background .2s,border-color .2s}
+.install-app-btn:hover{background:#202c46;border-color:#6b8cff}
+.install-app-btn:disabled{opacity:.7;cursor:default}
+.install-help{margin:10px 4px 0;color:#aebbd6;font-size:12px;line-height:1.6;text-align:center}
 .platforms{display:flex;justify-content:center;align-items:center;gap:17px;flex-wrap:wrap;margin:30px 0;color:#c3cce0;font-size:12px}
 .platforms span{font-size:9px;letter-spacing:1.5px;color:#707b94}
 footer{display:flex;justify-content:space-between;gap:14px;color:#68738b;font-size:10px;margin-top:90px;border-top:1px solid #20283a;padding-top:17px}
 @media(max-width:600px){.shell{padding:18px}.hero{margin-top:65px}.panel{padding:18px}.options{grid-template-columns:1fr}.platforms{gap:10px}footer{flex-direction:column;margin-top:55px}.local-tag{font-size:9px}}
-
-/* Ensure hidden controls stay hidden despite component display styles. */
 [hidden]{display:none!important}
