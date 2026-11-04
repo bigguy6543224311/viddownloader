@@ -1,0 +1,21 @@
+{
+  "id": "/",
+  "name": "SONI Downloader",
+  "short_name": "SONI",
+  "description": "Save videos you are authorized to keep.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#090b12",
+  "theme_color": "#090b12",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/static/soni-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
