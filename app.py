@@ -101,6 +101,10 @@ def run_download(job_id, url, media_type, quality):
                 total = data.get("total_bytes") or data.get("total_bytes_estimate") or 0
                 done = data.get("downloaded_bytes") or 0
                 job["progress"] = round(done * 100 / total) if total else None
+                job["downloaded_bytes"] = done
+                job["total_bytes"] = total or None
+                job["speed"] = data.get("speed")
+                job["eta"] = data.get("eta")
                 job["message"] = "Downloading..."
             elif data.get("status") == "finished":
                 job["progress"] = 100
@@ -162,8 +166,11 @@ def run_download(job_id, url, media_type, quality):
                 "status": "done",
                 "message": "Ready! Your file is saved in the downloads folder.",
                 "filename": filename.name,
+                "title": info.get("title") or filename.stem,
                 "path": str(filename),
                 "progress": 100,
+                "speed": 0,
+                "eta": 0,
             })
 
     except Exception as exc:
@@ -205,6 +212,11 @@ def start_download():
             "message": "Starting...",
             "progress": 0,
             "filename": None,
+            "title": None,
+            "downloaded_bytes": 0,
+            "total_bytes": None,
+            "speed": None,
+            "eta": None,
             "path": None
         }
 
