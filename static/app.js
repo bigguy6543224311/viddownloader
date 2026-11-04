@@ -6,6 +6,8 @@ const downloadBtn = document.getElementById("downloadBtn");
 const statusEl = document.getElementById("status");
 const progressEl = document.getElementById("progress");
 const saveLink = document.getElementById("saveLink");
+const copyTitleBtn = document.getElementById("copyTitleBtn");
+let completedVideoTitle = "";
 
 typeSelect.addEventListener("change", () => {
   qualityField.style.opacity = typeSelect.value === "mp3" ? ".4" : "1";
@@ -80,6 +82,26 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
 }
 
 // The final download button returns the interface to its ready state.
+copyTitleBtn.addEventListener("click", async () => {
+  if (!completedVideoTitle) return;
+  try {
+    await navigator.clipboard.writeText(completedVideoTitle);
+    copyTitleBtn.textContent = "✓ TITLE COPIED";
+  } catch {
+    const field = document.createElement("textarea");
+    field.value = completedVideoTitle;
+    field.setAttribute("readonly", "");
+    field.style.position = "fixed";
+    field.style.opacity = "0";
+    document.body.appendChild(field);
+    field.select();
+    const copied = document.execCommand("copy");
+    field.remove();
+    copyTitleBtn.textContent = copied ? "✓ TITLE COPIED" : "COPY FAILED";
+  }
+  setTimeout(() => { copyTitleBtn.textContent = "▢ COPY CAPTION"; }, 1800);
+});
+
 saveLink.addEventListener("click", () => {
   saveLink.hidden = true;
   downloadBtn.hidden = false;
@@ -92,6 +114,9 @@ downloadBtn.addEventListener("click", async () => {
 
   downloadBtn.disabled = true;
   saveLink.hidden = true;
+  copyTitleBtn.hidden = true;
+  completedVideoTitle = "";
+  copyTitleBtn.textContent = "▢ COPY CAPTION";
   progressEl.style.width = "0%";
   statusEl.textContent = "Starting download...";
 
@@ -116,6 +141,8 @@ downloadBtn.addEventListener("click", async () => {
 
         if (job.status === "done") {
           progressEl.style.width = "100%";
+          completedVideoTitle = (job.title || "").trim();
+          copyTitleBtn.hidden = !completedVideoTitle;
           saveLink.href = `/api/file/${jobId}`;
           saveLink.textContent = "↓ DOWNLOAD";
           saveLink.hidden = false;
