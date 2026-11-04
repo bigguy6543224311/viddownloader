@@ -6,6 +6,7 @@ const downloadBtn = document.getElementById("downloadBtn");
 const statusEl = document.getElementById("status");
 const progressEl = document.getElementById("progress");
 const saveLink = document.getElementById("saveLink");
+
 typeSelect.addEventListener("change", () => {
   qualityField.style.opacity = typeSelect.value === "mp3" ? ".4" : "1";
   qualitySelect.disabled = typeSelect.value === "mp3";
@@ -14,6 +15,13 @@ typeSelect.addEventListener("change", () => {
 document.getElementById("pasteBtn").addEventListener("click", async () => {
   try { urlInput.value = await navigator.clipboard.readText(); statusEl.textContent = "Link pasted."; }
   catch { statusEl.textContent = "Clipboard access blocked — paste with Ctrl+V."; }
+});
+
+// The final download button returns the interface to its ready state.
+saveLink.addEventListener("click", () => {
+  saveLink.hidden = true;
+  downloadBtn.hidden = false;
+  downloadBtn.disabled = false;
 });
 
 downloadBtn.addEventListener("click", async () => {
@@ -36,23 +44,32 @@ downloadBtn.addEventListener("click", async () => {
 
     const jobId = data.job_id;
     const poll = async () => {
-      const res = await fetch(`/api/status/${jobId}`);
-      const job = await res.json();
-      statusEl.textContent = job.message || "Working...";
-      if (job.progress !== null && job.progress !== undefined) progressEl.style.width = `${job.progress}%`;
+      try {
+        const res = await fetch(`/api/status/${jobId}`);
+        const job = await res.json();
+        statusEl.textContent = job.message || "Working...";
+        if (job.progress !== null && job.progress !== undefined) {
+          progressEl.style.width = `${job.progress}%`;
+        }
 
-      if (job.status === "done") {
-        saveLink.href = `/api/file/${jobId}`;
-        saveLink.textContent = "↓ DOWNLOAD";
-        saveLink.hidden = false;
+        if (job.status === "done") {
+          // Only reveal the final download action once processing is fully complete.
+          progressEl.style.width = "100%";
+          saveLink.href = `/api/file/${jobId}`;
+          saveLink.textContent = "↓ DOWNLOAD";
+          saveLink.hidden = false;
+          downloadBtn.hidden = true;
+          return;
+        }
+        if (job.status === "error") {
+          downloadBtn.disabled = false;
+          return;
+        }
+        setTimeout(poll, 900);
+      } catch (err) {
+        statusEl.textContent = err.message || "Couldn't check download status.";
         downloadBtn.disabled = false;
-        return;
       }
-      if (job.status === "error") {
-        downloadBtn.disabled = false;
-        return;
-      }
-      setTimeout(poll, 900);
     };
     poll();
   } catch (err) {
