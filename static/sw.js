@@ -1,7 +1,7 @@
 const CACHE_NAME = "video-downloader-v3";
 const APP_SHELL = [
   "/",
-  "/static/style.css?v=pwa2",
+  "/static/style.css?v=theme1",
   "/static/app.js?v=pwa2",
   "/static/manifest.webmanifest",
   "/static/soni-icon-192.png",
