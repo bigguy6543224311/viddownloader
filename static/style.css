@@ -93,7 +93,7 @@ input:focus,select:focus{border-color:rgba(182,243,106,.75);box-shadow:0 0 0 3px
 .install-help{margin:10px 4px 0;color:#aeb5c4;font-size:12px;line-height:1.6;text-align:center}
 .platforms{display:flex;justify-content:center;align-items:center;gap:18px;flex-wrap:wrap;margin:31px 0;color:#d6dae2;font-size:12px}
 .platforms span{font-size:9px;letter-spacing:1.5px;color:#727b8c;margin-right:4px}
-.platforms b{font-weight:600}
+.platforms .source-link{display:inline-flex;align-items:center;justify-content:center;padding:8px 13px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.035);color:#d6dae2;font-weight:600;text-decoration:none;transition:background .18s,border-color .18s,transform .18s}.platforms .source-link:hover{background:rgba(182,243,106,.09);border-color:rgba(182,243,106,.45);color:var(--accent-2);transform:translateY(-1px)}
 footer{display:flex;justify-content:space-between;gap:14px;color:#71798a;font-size:10px;margin-top:88px;border-top:1px solid var(--line);padding-top:17px}
 [hidden]{display:none!important}
 @media(max-width:600px){
