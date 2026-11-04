@@ -234,7 +234,7 @@ function runDownload(id, url, type, quality) {
 
 app.post("/api/cookies", (req, res) => {
   const expected = process.env.COOKIE_SYNC_TOKEN || "";
-  const supplied = String(req.get("authorization") || "").replace(/^Bearer\\s+/i, "");
+  const supplied = String(req.get("authorization") || "").replace(/^Bearer\s+/i, "");
   if (!expected) return res.status(503).json({ error: "Cookie sync is not configured on this server." });
   const expectedBuffer = Buffer.from(expected);
   const suppliedBuffer = Buffer.from(supplied);
