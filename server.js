@@ -17,6 +17,7 @@ const PORT = Number(process.env.PORT || 10000);
 const jobs = new Map();
 let bgutilProcess = null;
 let bgutilStarting = null;
+let syncedYouTubeCookiesPath = null;
 
 fs.mkdirSync(DOWNLOAD_DIR, { recursive: true });
 app.use(express.json({ limit: "2mb" }));
@@ -111,6 +112,7 @@ async function ensureBgutil() {
 }
 
 function getYouTubeCookiesFile() {
+  if (syncedYouTubeCookiesPath && fs.existsSync(syncedYouTubeCookiesPath)) return syncedYouTubeCookiesPath;
   const raw = process.env.YOUTUBE_COOKIES || "";
   const encoded = process.env.YOUTUBE_COOKIES_B64 || "";
   if (!raw && !encoded) return null;
@@ -229,6 +231,36 @@ function runDownload(id, url, type, quality) {
     });
   });
 }
+
+app.post("/api/cookies", (req, res) => {
+  const expected = process.env.COOKIE_SYNC_TOKEN || "";
+  const supplied = String(req.get("authorization") || "").replace(/^Bearer\\s+/i, "");
+  if (!expected) return res.status(503).json({ error: "Cookie sync is not configured on this server." });
+  const expectedBuffer = Buffer.from(expected);
+  const suppliedBuffer = Buffer.from(supplied);
+  if (expectedBuffer.length !== suppliedBuffer.length || !crypto.timingSafeEqual(expectedBuffer, suppliedBuffer)) {
+    return res.status(401).json({ error: "Unauthorized." });
+  }
+
+  const cookieText = String(req.body?.cookies || "");
+  if (cookieText.length > 1_500_000 ||
+      !cookieText.includes("youtube.com") ||
+      (!cookieText.includes("# Netscape HTTP Cookie File") && !cookieText.includes("# HTTP Cookie File"))) {
+    return res.status(400).json({ error: "Invalid Netscape-format YouTube cookies." });
+  }
+
+  const cookiePath = path.join(os.tmpdir(), "soni-youtube-cookies-synced.txt");
+  try {
+    fs.writeFileSync(cookiePath, cookieText, { encoding: "utf8", mode: 0o600 });
+    try { fs.chmodSync(cookiePath, 0o600); } catch {}
+    syncedYouTubeCookiesPath = cookiePath;
+    console.log("[cookie sync] Fresh YouTube cookies received from the authorized local helper.");
+    return res.json({ ok: true, message: "YouTube cookies refreshed for this running server." });
+  } catch (error) {
+    console.error("[cookie sync] Could not save cookies:", error.message);
+    return res.status(500).json({ error: "Could not save cookies on the server." });
+  }
+});
 
 app.get("/", (_req, res) => res.sendFile(path.join(ROOT, "templates", "index.html")));
 
