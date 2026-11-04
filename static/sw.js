@@ -1,8 +1,8 @@
-const CACHE_NAME = "video-downloader-v4";
+const CACHE_NAME = "video-downloader-v5";
 const APP_SHELL = [
   "/",
-  "/static/style.css?v=theme1",
-  "/static/app.js?v=copytitle1",
+  "/static/style.css?v=transfer2",
+  "/static/app.js?v=appname1",
   "/static/manifest.webmanifest",
   "/static/soni-icon-192.png",
   "/static/soni-icon-512.png",
