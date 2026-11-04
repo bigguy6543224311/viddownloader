@@ -8,6 +8,42 @@ const progressEl = document.getElementById("progress");
 const saveLink = document.getElementById("saveLink");
 const copyTitleBtn = document.getElementById("copyTitleBtn");
 let completedVideoTitle = "";
+const transferPanel = document.getElementById("transferPanel");
+const transferEmpty = document.getElementById("transferEmpty");
+const transferDetails = document.getElementById("transferDetails");
+const transferName = document.getElementById("transferName");
+const transferState = document.getElementById("transferState");
+const transferPercent = document.getElementById("transferPercent");
+const transferBar = document.getElementById("transferBar");
+const transferSpeed = document.getElementById("transferSpeed");
+const transferEta = document.getElementById("transferEta");
+document.getElementById("transferClose").addEventListener("click", () => { transferPanel.hidden = true; });
+function formatBytes(value) {
+  if (value === null || value === undefined || !Number.isFinite(Number(value)) || Number(value) <= 0) return "—";
+  const units = ["B/s", "KB/s", "MB/s", "GB/s"];
+  let n = Number(value), i = 0;
+  while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
+  return `${n.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+}
+function formatEta(value) {
+  if (value === null || value === undefined || !Number.isFinite(Number(value)) || Number(value) < 0) return "";
+  const seconds = Math.round(Number(value));
+  return seconds < 60 ? `${seconds}s left` : `${Math.floor(seconds / 60)}m ${seconds % 60}s left`;
+}
+function updateTransfer(job) {
+  transferPanel.hidden = false;
+  transferEmpty.hidden = true;
+  transferDetails.hidden = false;
+  transferName.textContent = job.title || job.filename || "Preparing your file…";
+  transferState.textContent = job.status === "done" ? "Ready to save" : job.status === "error" ? "Download failed" : (job.message || "Downloading…");
+  const pct = Number.isFinite(Number(job.progress)) ? Math.max(0, Math.min(100, Number(job.progress))) : 0;
+  transferPercent.textContent = `${pct}%`;
+  transferBar.style.width = `${pct}%`;
+  transferSpeed.textContent = job.status === "done" ? "Complete" : formatBytes(job.speed);
+  transferEta.textContent = job.status === "done" ? "" : formatEta(job.eta);
+  if (job.status === "error") transferBar.classList.add("transfer-error");
+  else transferBar.classList.remove("transfer-error");
+}
 
 typeSelect.addEventListener("change", () => {
   qualityField.style.opacity = typeSelect.value === "mp3" ? ".4" : "1";
@@ -119,6 +155,10 @@ downloadBtn.addEventListener("click", async () => {
   copyTitleBtn.textContent = "▢ COPY CAPTION";
   progressEl.style.width = "0%";
   statusEl.textContent = "Starting download...";
+  transferPanel.hidden = false;
+  transferEmpty.hidden = false;
+  transferDetails.hidden = true;
+  transferEmpty.textContent = "Connecting to the source…";
 
   try {
     const response = await fetch("/api/download", {
@@ -135,6 +175,7 @@ downloadBtn.addEventListener("click", async () => {
         const res = await fetch(`/api/status/${jobId}`);
         const job = await res.json();
         statusEl.textContent = job.message || "Working...";
+        updateTransfer(job);
         if (job.progress !== null && job.progress !== undefined) {
           progressEl.style.width = `${job.progress}%`;
         }
