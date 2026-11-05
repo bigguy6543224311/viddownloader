@@ -333,6 +333,35 @@ async function diagnoseOutboundIp() {
   }
 }
 
-app.listen(PORT, "0.0.0.0", () => console.log(`SONI DOWNLOADER (Node.js) listening on ${PORT}`));
+async function installBgutilPlugin() {
+  console.log("[BGUtil plugin] Ensuring yt-dlp PO token plugin is installed...");
+  await new Promise((resolve, reject) => {
+    const installer = spawn(PYTHON, [
+      "-m", "pip", "install", "--disable-pip-version-check",
+      "--no-cache-dir", "bgutil-ytdlp-pot-provider==2.0.2"
+    ], { cwd: ROOT, env: process.env, stdio: ["ignore", "pipe", "pipe"] });
+    let errors = "";
+    installer.stdout.on("data", chunk => console.log("[BGUtil plugin]", chunk.toString().trim()));
+    installer.stderr.on("data", chunk => {
+      errors += chunk.toString();
+      console.log("[BGUtil plugin]", chunk.toString().trim());
+    });
+    installer.on("error", reject);
+    installer.on("close", code => {
+      if (code === 0) {
+        console.log("[BGUtil plugin] Plugin installation verified.");
+        resolve();
+      } else {
+        reject(new Error("Could not install BGUtil yt-dlp plugin: " + errors.slice(-1500)));
+      }
+    });
+  });
+}
 
-diagnoseOutboundIp();
+installBgutilPlugin().then(() => {
+  app.listen(PORT, "0.0.0.0", () => console.log(`SONI DOWNLOADER (Node.js) listening on ${PORT}`));
+  diagnoseOutboundIp();
+}).catch(error => {
+  console.error("[BGUtil plugin] Startup blocked:", error.message);
+  process.exit(1);
+});
