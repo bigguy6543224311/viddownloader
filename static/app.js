@@ -226,9 +226,19 @@ saveLink.addEventListener("click", event => {
   xhr.send();
 });
 
+function isYouTubeUrl(value) {
+  try {
+    const host = new URL(value).hostname.toLowerCase();
+    return ["youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com", "youtu.be"].includes(host);
+  } catch { return false; }
+}
+
 downloadBtn.addEventListener("click", async () => {
   const url = urlInput.value.trim();
   if (!url) { statusEl.textContent = "Paste a video link first."; urlInput.focus(); return; }
+
+  const localYouTube = isYouTubeUrl(url);
+  const apiBase = localYouTube ? "http://127.0.0.1:18765" : "";
 
   downloadBtn.disabled = true;
   saveLink.hidden = true;
@@ -236,10 +246,10 @@ downloadBtn.addEventListener("click", async () => {
   completedVideoTitle = "";
   copyTitleBtn.textContent = "▢ COPY CAPTION";
   progressEl.style.width = "0%";
-  statusEl.textContent = "Starting download...";
+  statusEl.textContent = localYouTube ? "Connecting to your laptop YouTube downloader..." : "Starting download...";
 
   try {
-    const response = await fetch("/api/download", {
+    const response = await fetch(apiBase + "/api/download", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({url, type: typeSelect.value, quality: qualitySelect.value})
@@ -250,7 +260,7 @@ downloadBtn.addEventListener("click", async () => {
     const jobId = data.job_id;
     const poll = async () => {
       try {
-        const res = await fetch(`/api/status/${jobId}`);
+        const res = await fetch(`${apiBase}/api/status/${jobId}`);
         const job = await res.json();
         statusEl.textContent = job.message || "Working...";
         updateTransfer(job);
@@ -262,7 +272,7 @@ downloadBtn.addEventListener("click", async () => {
           progressEl.style.width = "100%";
           completedVideoTitle = (job.title || "").trim();
           copyTitleBtn.hidden = !completedVideoTitle;
-          saveLink.href = `/api/file/${jobId}`;
+          saveLink.href = `${apiBase}/api/file/${jobId}`;
           saveLink.textContent = "↓ DOWNLOAD";
           saveLink.hidden = false;
           downloadBtn.hidden = true;
@@ -280,7 +290,7 @@ downloadBtn.addEventListener("click", async () => {
     };
     poll();
   } catch (err) {
-    statusEl.textContent = err.message;
+    statusEl.textContent = localYouTube ? "Local YouTube downloader is not running. Open Start SONI YouTube Local.bat on your laptop, then retry." : err.message;
     downloadBtn.disabled = false;
   }
 });
