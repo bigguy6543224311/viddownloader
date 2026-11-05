@@ -337,7 +337,21 @@ app.post("/api/download", async (req, res) => {
 
   res.json({ job_id: id });
   if (url.includes("youtube.com") || url.includes("youtu.be")) {
-    runRailwayYouTubeDownload(id, url, type, quality);
+    // Run YouTube downloads directly on Render. Start the local PO-token
+    // provider first; the browser cookie sync endpoint refreshes the session.
+    (async () => {
+      try {
+        await ensureBgutil();
+        console.log("[YouTube route] BGUtil is ready; downloading directly on Render.");
+        runDownload(id, url, type, quality);
+      } catch (error) {
+        console.error("[YouTube route] Render PO-token provider failed:", error);
+        updateJob(id, {
+          status: "error",
+          message: String(error.message || error).slice(0, 500)
+        });
+      }
+    })();
   } else {
     runDownload(id, url, type, quality);
   }
