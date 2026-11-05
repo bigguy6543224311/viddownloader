@@ -166,7 +166,8 @@ function runDownload(id, url, type, quality) {
   else args.push("--merge-output-format", "mp4");
 
   if (url.includes("youtube.com") || url.includes("youtu.be")) {
-    args.push("--extractor-args", "youtubepot-bgutilhttp:base_url=http://127.0.0.1:4416;youtube:player-client=mweb,tv,web_safari");
+    args.push("--force-ipv4");
+    args.push("--extractor-args", "youtubepot-bgutilhttp:base_url=http://127.0.0.1:4416;youtube:player-client=mweb,web_safari");
     try {
       const cookiesFile = getYouTubeCookiesFile();
       if (cookiesFile) {
