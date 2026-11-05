@@ -237,8 +237,8 @@ downloadBtn.addEventListener("click", async () => {
   const url = urlInput.value.trim();
   if (!url) { statusEl.textContent = "Paste a video link first."; urlInput.focus(); return; }
 
-  const localYouTube = isYouTubeUrl(url);
-  const apiBase = localYouTube ? "http://127.0.0.1:18765" : "";
+  // All downloads run through the cloud server. Never route requests to localhost.
+  const apiBase = "";
 
   downloadBtn.disabled = true;
   saveLink.hidden = true;
@@ -246,7 +246,7 @@ downloadBtn.addEventListener("click", async () => {
   completedVideoTitle = "";
   copyTitleBtn.textContent = "▢ COPY CAPTION";
   progressEl.style.width = "0%";
-  statusEl.textContent = localYouTube ? "Connecting to your laptop YouTube downloader..." : "Starting download...";
+  statusEl.textContent = "Starting cloud download...";
 
   try {
     const response = await fetch(apiBase + "/api/download", {
@@ -290,7 +290,7 @@ downloadBtn.addEventListener("click", async () => {
     };
     poll();
   } catch (err) {
-    statusEl.textContent = localYouTube ? "Local YouTube downloader is not running. Open Start SONI YouTube Local.bat on your laptop, then retry." : err.message;
+    statusEl.textContent = err.message || "Could not start cloud download.";
     downloadBtn.disabled = false;
   }
 });
