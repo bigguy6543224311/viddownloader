@@ -17,17 +17,40 @@ let bgutilPromise = null;
 
 function startBgutil() {
   if (bgutilPromise) return bgutilPromise;
-  bgutilPromise = new Promise((resolve, reject) => {
-    bgutil = spawn("node", [BGUTIL_ENTRY, "--host", "127.0.0.1", "--port", "4416"], {
-      stdio: ["ignore", "inherit", "inherit"]
-    });
-    bgutil.once("error", reject);
-    bgutil.once("spawn", () => resolve());
-    bgutil.once("exit", code => {
-      if (code !== 0 && code !== null) console.error("BGUtil exited:", code);
-      bgutil = null;
-      bgutilPromise = null;
-    });
+  bgutilPromise = (async () => {
+    if (!bgutil || bgutil.exitCode !== null || bgutil.killed) {
+      bgutil = spawn("node", [BGUTIL_ENTRY, "--host", "127.0.0.1", "--port", "4416"], {
+        stdio: ["ignore", "inherit", "inherit"]
+      });
+      await new Promise((resolve, reject) => {
+        bgutil.once("error", reject);
+        bgutil.once("spawn", resolve);
+      });
+      bgutil.once("exit", code => {
+        if (code !== 0 && code !== null) console.error("BGUtil exited:", code);
+        bgutil = null;
+        bgutilPromise = null;
+      });
+    }
+    let lastError;
+    for (let attempt = 0; attempt < 60; attempt++) {
+      if (bgutil && bgutil.exitCode !== null) throw new Error("BGUtil provider exited during startup.");
+      try {
+        const response = await fetch("http://127.0.0.1:4416/ping", { signal: AbortSignal.timeout(1500) });
+        if (response.ok) {
+          console.log("[BGUtil] HTTP provider is ready.");
+          return;
+        }
+        lastError = new Error("BGUtil health check returned HTTP " + response.status);
+      } catch (error) {
+        lastError = error;
+      }
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    throw new Error("BGUtil provider did not become ready: " + (lastError?.message || "timeout"));
+  })().catch(error => {
+    bgutilPromise = null;
+    throw error;
   });
   return bgutilPromise;
 }
