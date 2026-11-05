@@ -4,6 +4,8 @@ const fs = require("fs");
 const { spawn } = require("child_process");
 const crypto = require("crypto");
 const os = require("os");
+const { Readable } = require("stream");
+const { pipeline } = require("stream/promises");
 
 const app = express();
 const ROOT = __dirname;
@@ -134,6 +136,56 @@ function getYouTubeCookiesFile() {
   fs.writeFileSync(cookiePath, cookieText, { encoding: "utf8", mode: 0o600 });
   try { fs.chmodSync(cookiePath, 0o600); } catch {}
   return cookiePath;
+}
+
+async function runRailwayYouTubeDownload(id, url, type, quality) {
+  const workerUrl = String(process.env.RAILWAY_YOUTUBE_WORKER_URL || "").replace(/\/+$/, "");
+  const token = process.env.WORKER_SHARED_TOKEN || "";
+  if (!workerUrl || !token) {
+    updateJob(id, { status: "error", message: "YouTube cloud worker is not connected yet. Configure RAILWAY_YOUTUBE_WORKER_URL and WORKER_SHARED_TOKEN on Render." });
+    return;
+  }
+  updateJob(id, { status: "downloading", message: "Sending YouTube job to the cloud worker...", progress: 1 });
+  let cookies = "";
+  try {
+    const cookiePath = getYouTubeCookiesFile();
+    if (cookiePath && fs.existsSync(cookiePath)) cookies = fs.readFileSync(cookiePath, "utf8");
+  } catch (error) {
+    updateJob(id, { status: "error", message: error.message.slice(0, 500) });
+    return;
+  }
+  try {
+    const response = await fetch(workerUrl + "/download", {
+      method: "POST",
+      headers: { "content-type": "application/json", "authorization": "Bearer " + token },
+      body: JSON.stringify({ url, type, quality, cookies }),
+      signal: AbortSignal.timeout(30 * 60 * 1000)
+    });
+    if (!response.ok) {
+      let detail = "";
+      try { const body = await response.json(); detail = String(body.error || ""); } catch {}
+      throw new Error(detail || ("YouTube worker returned HTTP " + response.status));
+    }
+    if (!response.body) throw new Error("YouTube worker returned an empty response.");
+    const disposition = response.headers.get("content-disposition") || "";
+    const match = disposition.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i);
+    let filename = match ? decodeURIComponent(match[1] || match[2]) : ("youtube-" + id + (type === "mp3" ? ".mp3" : ".mp4"));
+    filename = path.basename(filename).replace(/[\\/:*?"<>|]/g, "_");
+    const finalPath = path.join(DOWNLOAD_DIR, id + "-" + filename);
+    const total = Number(response.headers.get("content-length") || 0);
+    let received = 0;
+    const source = Readable.fromWeb(response.body);
+    source.on("data", chunk => {
+      received += chunk.length;
+      const progress = total > 0 ? Math.min(99, Math.round(received / total * 100)) : Math.min(95, (jobs.get(id)?.progress || 1) + 1);
+      updateJob(id, { progress, message: "Receiving finished video from cloud worker..." });
+    });
+    await pipeline(source, fs.createWriteStream(finalPath));
+    updateJob(id, { status: "done", message: "Ready! Your file is saved.", filename, title: filename.replace(/\.[^.]+$/, ""), path: finalPath, progress: 100 });
+  } catch (error) {
+    console.error("[Railway YouTube worker]", error);
+    updateJob(id, { status: "error", message: String(error.message || error).slice(0, 500) });
+  }
 }
 
 function runDownload(id, url, type, quality) {
@@ -284,11 +336,10 @@ app.post("/api/download", async (req, res) => {
   jobs.set(id, { status: "queued", message: "Starting...", progress: 0, filename: null, title: null, path: null });
 
   res.json({ job_id: id });
-  try {
-    if (url.includes("youtube.com") || url.includes("youtu.be")) await ensureBgutil();
+  if (url.includes("youtube.com") || url.includes("youtu.be")) {
+    runRailwayYouTubeDownload(id, url, type, quality);
+  } else {
     runDownload(id, url, type, quality);
-  } catch (error) {
-    updateJob(id, { status: "error", message: error.message.slice(0, 500) });
   }
 });
 
