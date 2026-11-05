@@ -337,22 +337,12 @@ app.post("/api/download", async (req, res) => {
 
   res.json({ job_id: id });
   if (url.includes("youtube.com") || url.includes("youtu.be")) {
-    // Run YouTube downloads directly on Render. Start the local PO-token
-    // provider first; the browser cookie sync endpoint refreshes the session.
-    (async () => {
-      try {
-        await ensureBgutil();
-        console.log("[YouTube route] BGUtil is ready; downloading directly on Render.");
-        runDownload(id, url, type, quality);
-      } catch (error) {
-        console.error("[YouTube route] Render PO-token provider failed:", error);
-        updateJob(id, {
-          status: "error",
-          message: String(error.message || error).slice(0, 500)
-        });
-      }
-    })();
+    // YouTube runs on the separate Railway cloud worker because Render's
+    // outbound requests are being rate-limited/blocked by YouTube (429/403).
+    console.log("[YouTube route] Sending download to Railway cloud worker.");
+    runRailwayYouTubeDownload(id, url, type, quality);
   } else {
+    // All other supported sites continue downloading directly on Render.
     runDownload(id, url, type, quality);
   }
 });
